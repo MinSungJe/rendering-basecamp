@@ -1,33 +1,46 @@
-import { useParams } from 'next/navigation';
-import { useEffect, useRef } from 'react';
-import Home from '..';
-import { useMovieDetailModal } from '@/hooks/useMovieDetailModal';
 import { moviesApi } from '@/api/movies';
+import { MovieDetailModal } from '@/components/MovieDetailModal';
+import { GetServerSideProps, InferGetServerSidePropsType } from 'next';
+import { useRouter } from 'next/router';
+import Home from '..';
+import { MovieItem } from '@/types/Movie.types';
+import { MovieDetailResponse } from '@/types/MovieDetail.types';
 
-export default function MovieDetailPage() {
+export default function Detail({
+  movies,
+  movieDetail,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const router = useRouter();
+
+  if (movies == null || movies.length === 0) {
+    return <div>영화 정보를 불러오는데 실패했습니다.</div>;
+  }
+
   return (
     <>
-      <Home />
-      <DetailPageOpenModal />
+      <Home movies={movies} />
+      <MovieDetailModal
+        movie={movieDetail}
+        onClose={() => {
+          router.back();
+        }}
+      />
     </>
   );
 }
 
-function DetailPageOpenModal() {
-  const { movieId } = useParams();
-  const { openMovieDetailModal } = useMovieDetailModal();
-  const onceRef = useRef(false);
+export const getServerSideProps: GetServerSideProps<{
+  movies: MovieItem[];
+  movieDetail: MovieDetailResponse;
+}> = async (context) => {
+  const { movieId } = context.params as { movieId: string };
+  const popularResponse = await moviesApi.getPopular();
+  const detailResponse = await moviesApi.getDetail(Number(movieId));
 
-  useEffect(() => {
-    if (movieId == null || onceRef.current === true) {
-      return;
-    }
-    (async () => {
-      onceRef.current = true;
-      const movieDetail = await moviesApi.getDetail(Number(movieId));
-      openMovieDetailModal(movieDetail.data);
-    })();
-  }, [movieId, openMovieDetailModal]);
-
-  return null;
-}
+  return {
+    props: {
+      movies: popularResponse.data.results,
+      movieDetail: detailResponse.data,
+    },
+  };
+};
