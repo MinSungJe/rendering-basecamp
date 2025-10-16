@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import Home from '..';
 import { MovieItem } from '@/types/Movie.types';
 import { MovieDetailResponse } from '@/types/MovieDetail.types';
+import Head from 'next/head';
 
 export default function Detail({
   movies,
@@ -18,6 +19,11 @@ export default function Detail({
 
   return (
     <>
+      <Head>
+        <meta property="og:title" content={movieDetail.title} key="title" />
+        <meta property="og:description" content={movieDetail.overview} key="title" />
+        <meta property="og:image" content={movieDetail.poster_path ?? ''} key="title" />
+      </Head>
       <Home movies={movies} />
       <MovieDetailModal
         movie={movieDetail}
